@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -11,6 +11,17 @@ import {
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Progress } from "../ui/progress";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "../ui/dialog";
 import { useCurrency } from "@/src/contexts/CurrencyContext";
 import InvoiceService from "../../services/InvoiceService";
 import { cn } from "@/src/lib/utils";
@@ -39,6 +50,8 @@ import {
   CircleDollarSign,
   Boxes,
   Layers,
+  Pencil,
+  RotateCcw,
 } from "lucide-react";
 
 interface WorkshopFinancials {
@@ -261,6 +274,31 @@ function StatCard({
   );
 }
 
+const MANUAL_ADJUSTMENTS_KEY = "workshop_manual_adjustments";
+
+function loadManualAdjustments(): { revenue: number; poSpend: number } {
+  if (typeof window === "undefined") return { revenue: 0, poSpend: 0 };
+  try {
+    const raw = localStorage.getItem(MANUAL_ADJUSTMENTS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        revenue: Number(parsed.revenue) || 0,
+        poSpend: Number(parsed.poSpend) || 0,
+      };
+    }
+  } catch {}
+  return { revenue: 0, poSpend: 0 };
+}
+
+function saveManualAdjustments(data: {
+  revenue: number;
+  poSpend: number;
+}) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(MANUAL_ADJUSTMENTS_KEY, JSON.stringify(data));
+}
+
 export default function WorkshopDashboard({
   stats,
   onNavigate,
@@ -271,6 +309,51 @@ export default function WorkshopDashboard({
   const [poHistoryOpen, setPoHistoryOpen] = useState(false);
   const [invoiceOverviewOpen, setInvoiceOverviewOpen] = useState(false);
   const [recentActivityOpen, setRecentActivityOpen] = useState(false);
+
+  const [manualAdjustments, setManualAdjustments] = useState<{
+    revenue: number;
+    poSpend: number;
+  }>(() => loadManualAdjustments());
+  const [revenueDialogOpen, setRevenueDialogOpen] = useState(false);
+  const [poSpendDialogOpen, setPoSpendDialogOpen] = useState(false);
+  const [revenueInput, setRevenueInput] = useState("");
+  const [poSpendInput, setPoSpendInput] = useState("");
+
+  useEffect(() => {
+    saveManualAdjustments(manualAdjustments);
+  }, [manualAdjustments]);
+
+  const openRevenueDialog = useCallback(() => {
+    setRevenueInput(manualAdjustments.revenue.toString());
+    setRevenueDialogOpen(true);
+  }, [manualAdjustments.revenue]);
+
+  const openPoSpendDialog = useCallback(() => {
+    setPoSpendInput(manualAdjustments.poSpend.toString());
+    setPoSpendDialogOpen(true);
+  }, [manualAdjustments.poSpend]);
+
+  const saveRevenueAdjustment = () => {
+    const val = parseFloat(revenueInput) || 0;
+    setManualAdjustments((prev) => ({ ...prev, revenue: val }));
+    setRevenueDialogOpen(false);
+  };
+
+  const savePoSpendAdjustment = () => {
+    const val = parseFloat(poSpendInput) || 0;
+    setManualAdjustments((prev) => ({ ...prev, poSpend: val }));
+    setPoSpendDialogOpen(false);
+  };
+
+  const resetRevenueAdjustment = () => {
+    setManualAdjustments((prev) => ({ ...prev, revenue: 0 }));
+    setRevenueDialogOpen(false);
+  };
+
+  const resetPoSpendAdjustment = () => {
+    setManualAdjustments((prev) => ({ ...prev, poSpend: 0 }));
+    setPoSpendDialogOpen(false);
+  };
 
   const financials = stats.financials ?? {
     totalRevenue: 0,
@@ -293,11 +376,20 @@ export default function WorkshopDashboard({
     amounts: { total: 0, paid: 0, outstanding: 0 },
   };
 
-  const netRevenuePositive = financials.netIncome >= 0;
   const maxTrendValue = Math.max(
     ...financials.monthlyTrend.flatMap((m) => [m.revenue, m.expenses]),
     1,
   );
+
+  const adjustedTotalRevenue =
+    financials.totalRevenue + manualAdjustments.revenue;
+  const adjustedTotalExpenses =
+    financials.totalExpenses + manualAdjustments.poSpend;
+  const adjustedNetIncome =
+    adjustedTotalRevenue - adjustedTotalExpenses;
+  const adjustedNetRevenuePositive = adjustedNetIncome >= 0;
+  const hasRevenueAdjustment = manualAdjustments.revenue !== 0;
+  const hasPoSpendAdjustment = manualAdjustments.poSpend !== 0;
 
   const completionRate =
     stats.totalProjects > 0
@@ -340,7 +432,7 @@ export default function WorkshopDashboard({
       <div
         className={cn(
           "relative overflow-hidden rounded-2xl border-0 p-6 text-white shadow-xl transition-all duration-300 hover:shadow-2xl",
-          netRevenuePositive
+          adjustedNetRevenuePositive
             ? "bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600"
             : "bg-gradient-to-br from-rose-600 via-red-600 to-orange-600",
         )}
@@ -356,31 +448,47 @@ export default function WorkshopDashboard({
               </p>
             </div>
             <p className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-              {formatCurrency(financials.netIncome)}
+              {formatCurrency(adjustedNetIncome)}
             </p>
             <p className="mt-2 text-sm text-white/85">
               After deducting{" "}
               <span className="font-semibold">
-                {formatCurrency(financials.totalExpenses)}
+                {formatCurrency(adjustedTotalExpenses)}
               </span>{" "}
               of purchase order spend
             </p>
+            {(hasRevenueAdjustment || hasPoSpendAdjustment) && (
+              <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-xs text-white/85 backdrop-blur-sm">
+                <Pencil className="h-3 w-3" />
+                Includes manual adjustment
+              </p>
+            )}
           </div>
           <div className="flex shrink-0 flex-col gap-3 md:items-end">
-            <div className="flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 backdrop-blur-sm">
+            <Button
+              type="button"
+              onClick={openRevenueDialog}
+              className="group flex h-auto items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 backdrop-blur-sm hover:bg-white/25 transition-colors text-white"
+            >
               <TrendingUp className="h-4 w-4 text-white" />
               <span className="text-sm font-semibold">
-                {formatCurrency(financials.totalRevenue)}
+                {formatCurrency(adjustedTotalRevenue)}
               </span>
               <span className="text-xs text-white/70">in revenue</span>
-            </div>
-            <div className="flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 backdrop-blur-sm">
+              <Pencil className="h-3 w-3 text-white/50 opacity-0 transition-opacity group-hover:opacity-100" />
+            </Button>
+            <Button
+              type="button"
+              onClick={openPoSpendDialog}
+              className="group flex h-auto items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 backdrop-blur-sm hover:bg-white/25 transition-colors text-white"
+            >
               <ArrowDownRight className="h-4 w-4 text-white" />
               <span className="text-sm font-semibold">
-                {formatCurrency(financials.totalExpenses)}
+                {formatCurrency(adjustedTotalExpenses)}
               </span>
               <span className="text-xs text-white/70">PO spend</span>
-            </div>
+              <Pencil className="h-3 w-3 text-white/50 opacity-0 transition-opacity group-hover:opacity-100" />
+            </Button>
           </div>
         </div>
       </div>
@@ -979,7 +1087,7 @@ export default function WorkshopDashboard({
                   <span className="text-sm font-medium">Net Revenue</span>
                 </div>
                 <div className="text-2xl font-bold text-emerald-600">
-                  {formatCurrency(financials.netIncome)}
+                  {formatCurrency(adjustedNetIncome)}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
                   After PO spend
@@ -989,6 +1097,164 @@ export default function WorkshopDashboard({
           </CardContent>
         )}
       </Card>
+
+      {/* Manual revenue adjustment dialog */}
+      <Dialog
+        open={revenueDialogOpen}
+        onOpenChange={setRevenueDialogOpen}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-emerald-600" />
+              Manual Revenue Entry
+            </DialogTitle>
+            <DialogDescription>
+              Add or edit revenue manually. This is added on top of the
+              automatically calculated revenue from invoices and job cards.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="rounded-lg bg-emerald-50 p-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-emerald-800">Auto-calculated</span>
+                <span className="font-semibold text-emerald-800">
+                  {formatCurrency(financials.totalRevenue)}
+                </span>
+              </div>
+              <div className="mt-1.5 flex items-center justify-between">
+                <span className="text-emerald-700">Manual adjustment</span>
+                <span className="font-semibold text-emerald-700">
+                  {formatCurrency(manualAdjustments.revenue)}
+                </span>
+              </div>
+              <div className="mt-1.5 border-t border-emerald-200 pt-1.5 flex items-center justify-between">
+                <span className="font-medium text-emerald-900">Total</span>
+                <span className="font-bold text-emerald-900">
+                  {formatCurrency(adjustedTotalRevenue)}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="revenue-input">
+                Manual revenue amount (£)
+              </Label>
+              <Input
+                id="revenue-input"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                value={revenueInput}
+                onChange={(e) => setRevenueInput(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Positive value increases total revenue.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={resetRevenueAdjustment}
+              className="text-red-600"
+            >
+              <RotateCcw className="mr-1.5 h-4 w-4" />
+              Reset
+            </Button>
+            <div className="flex gap-2">
+              <DialogClose asChild>
+                <Button type="button" variant="ghost">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="button" onClick={saveRevenueAdjustment}>
+                Save
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manual PO spend adjustment dialog */}
+      <Dialog
+        open={poSpendDialogOpen}
+        onOpenChange={setPoSpendDialogOpen}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowDownRight className="h-5 w-5 text-purple-600" />
+              Manual PO Spend Entry
+            </DialogTitle>
+            <DialogDescription>
+              Add or edit purchase order spend manually. This is added on top
+              of the automatically calculated spend from purchase orders.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="rounded-lg bg-purple-50 p-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-purple-800">Auto-calculated</span>
+                <span className="font-semibold text-purple-800">
+                  {formatCurrency(financials.totalExpenses)}
+                </span>
+              </div>
+              <div className="mt-1.5 flex items-center justify-between">
+                <span className="text-purple-700">Manual adjustment</span>
+                <span className="font-semibold text-purple-700">
+                  {formatCurrency(manualAdjustments.poSpend)}
+                </span>
+              </div>
+              <div className="mt-1.5 border-t border-purple-200 pt-1.5 flex items-center justify-between">
+                <span className="font-medium text-purple-900">Total</span>
+                <span className="font-bold text-purple-900">
+                  {formatCurrency(adjustedTotalExpenses)}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="po-spend-input">
+                Manual PO spend amount (£)
+              </Label>
+              <Input
+                id="po-spend-input"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                value={poSpendInput}
+                onChange={(e) => setPoSpendInput(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Positive value increases total PO spend.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={resetPoSpendAdjustment}
+              className="text-red-600"
+            >
+              <RotateCcw className="mr-1.5 h-4 w-4" />
+              Reset
+            </Button>
+            <div className="flex gap-2">
+              <DialogClose asChild>
+                <Button type="button" variant="ghost">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="button" onClick={savePoSpendAdjustment}>
+                Save
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
