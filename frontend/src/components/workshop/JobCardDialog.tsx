@@ -277,8 +277,20 @@ export default function JobCardDialog({
       }
       onSuccess(saved);
       onOpenChange(false);
-    } catch {
-      setErrorMessage("Failed to save job card.");
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const detail =
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        error?.message;
+      setErrorMessage(
+        `Failed to save job card.${detail ? ` ${detail}` : ""}`,
+      );
+      console.error("[JobCardDialog] Save error:", {
+        status,
+        detail,
+        url: error?.config?.url,
+      });
     } finally {
       setLoading(false);
     }
@@ -312,19 +324,37 @@ export default function JobCardDialog({
               <AlertDescription>{errorMessage}</AlertDescription>
             </Alert>
           )}
+          <p className="shrink-0 text-xs text-muted-foreground">
+            <span className="font-bold text-destructive">*</span> Required
+            field — must be filled before saving
+          </p>
           <div className="min-h-0 flex-1 overflow-y-auto px-1.5 py-1">
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className="sm:col-span-1">
-                    <Label>Title *</Label>
+                    <Label className="flex items-center gap-1">
+                      Title
+                      <span className="font-bold text-destructive">*</span>
+                    </Label>
                     <Input
                       value={formData.title}
                       onChange={(e) =>
                         setFormData({ ...formData, title: e.target.value })
                       }
                       placeholder="Job title"
+                      aria-required="true"
+                      className={
+                        formData.title.trim()
+                          ? ""
+                          : "border-destructive/70 bg-destructive/5 focus-visible:ring-destructive/40"
+                      }
                     />
+                    {!formData.title.trim() && (
+                      <p className="mt-1 text-xs font-medium text-destructive">
+                        Required
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label>Status</Label>
@@ -605,7 +635,10 @@ export default function JobCardDialog({
               </div>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                 <div className="md:col-span-2">
-                  <Label>Product</Label>
+                  <Label className="flex items-center gap-1">
+                    Product
+                    <span className="font-bold text-destructive">*</span>
+                  </Label>
                   <Select
                     value={newItem.productId || ""}
                     onValueChange={(value) => {
@@ -639,7 +672,10 @@ export default function JobCardDialog({
                   </Select>
                 </div>
                 <div>
-                  <Label>Qty</Label>
+                  <Label className="flex items-center gap-1">
+                    Qty
+                    <span className="font-bold text-destructive">*</span>
+                  </Label>
                   <Input
                     type="number"
                     min={1}
