@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import type { MotWizardServices } from "../wizardTypes";
 import { MotServiceSearchSelect } from "../MotServiceSearchSelect";
 import { getSelectedMotServices } from "../wizardUtils";
+import { useMotServices } from "../useMotServices";
 
 type Step2ServicesProps = {
   services: MotWizardServices;
@@ -26,6 +27,7 @@ export function Step2Services({
   onNext,
   canNext,
 }: Step2ServicesProps) {
+  useMotServices();
   const selectedServices = getSelectedMotServices(services, inspectionPrice);
   const servicesTotal = selectedServices.reduce(
     (total, service) => total + service.price,

@@ -10,6 +10,7 @@ import {
   getDeliveryOptionLabel,
   getSelectedMotServices,
 } from "./wizardUtils";
+import { useMotServices } from "./useMotServices";
 
 type MotBookingSummaryPanelProps = {
   data: MotWizardData;
@@ -72,6 +73,7 @@ export function MotBookingSummaryPanel({
   nextDisabled = false,
   showNext = true,
 }: MotBookingSummaryPanelProps) {
+  useMotServices();
   const vehicleSummary = formatVehicleSummary(data);
   const total = calculateTotalCost(data, inspectionPrice);
   const deliveryLabel = getDeliveryOptionLabel(data.dateTime.deliveryOption);

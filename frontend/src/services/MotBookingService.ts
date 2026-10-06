@@ -8,6 +8,12 @@ import type {
   MotBookingStats,
 } from "../models/mot/MotBooking";
 import type { MotSettings, MotSettingsUpdate } from "../models/mot/MotSettings";
+import type {
+  MotService,
+  MotServiceCreate,
+  MotServiceUpdate,
+  MotServicesResponse,
+} from "../models/mot/MotService";
 
 export class MotBookingService {
   private adminBaseUrl = "/mot";
@@ -137,6 +143,32 @@ export class MotBookingService {
 
   async deleteBooking(id: string): Promise<void> {
     return apiService.delete(`${this.adminBaseUrl}/bookings/${id}`);
+  }
+
+  // MOT Services
+  async getServices(includeInactive = false): Promise<MotServicesResponse> {
+    const qs = includeInactive ? "?include_inactive=true" : "";
+    return apiService.get(`${this.adminBaseUrl}/services${qs}`);
+  }
+
+  async getActiveServices(): Promise<MotServicesResponse> {
+    return apiService.get(`${this.adminBaseUrl}/services?active_only=true`);
+  }
+
+  async getPublicServices(tenantDomain: string): Promise<MotServicesResponse> {
+    return apiService.get(`${this.publicBaseUrl(tenantDomain)}/services`);
+  }
+
+  async createService(data: MotServiceCreate): Promise<MotService> {
+    return apiService.post(`${this.adminBaseUrl}/services`, data);
+  }
+
+  async updateService(id: string, data: MotServiceUpdate): Promise<MotService> {
+    return apiService.patch(`${this.adminBaseUrl}/services/${id}`, data);
+  }
+
+  async deleteService(id: string): Promise<void> {
+    return apiService.delete(`${this.adminBaseUrl}/services/${id}`);
   }
 }
 

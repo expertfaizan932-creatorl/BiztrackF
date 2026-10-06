@@ -9,10 +9,10 @@ import { Badge } from "@/src/components/ui/badge";
 import { Card, CardContent } from "@/src/components/ui/card";
 import {
   MOT_INSPECTION_PRICE,
-  MOT_SERVICE_OPTIONS,
+  MOT_INSPECTION_SERVICE,
   type MotServiceOption,
 } from "./wizardTypes";
-import { getMotServiceById } from "./wizardUtils";
+import { useMotServices } from "./useMotServices";
 
 type MotServiceSearchSelectProps = {
   value: string[];
@@ -27,24 +27,20 @@ export function MotServiceSearchSelect({
 }: MotServiceSearchSelectProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const serviceOptions = useMotServices();
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedIds = useMemo(() => new Set(value), [value]);
-
-  const serviceOptions = useMemo(
-    () =>
-      MOT_SERVICE_OPTIONS.map(
-        (service) =>
-          getMotServiceById(service.id, inspectionPrice) as MotServiceOption,
-      ),
-    [inspectionPrice],
-  );
 
   const selectedServices = useMemo(
     () =>
       value
-        .map((id) => getMotServiceById(id, inspectionPrice))
+        .map((id) =>
+          id === "mot-inspection"
+            ? { ...MOT_INSPECTION_SERVICE, price: inspectionPrice }
+            : serviceOptions.find((option) => option.id === id),
+        )
         .filter((service): service is MotServiceOption => Boolean(service)),
-    [value, inspectionPrice],
+    [value, inspectionPrice, serviceOptions],
   );
 
   const filteredServices = useMemo(() => {

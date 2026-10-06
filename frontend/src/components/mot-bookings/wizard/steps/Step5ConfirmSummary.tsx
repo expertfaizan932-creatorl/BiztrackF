@@ -12,6 +12,7 @@ import {
   getDeliveryOptionLabel,
   getSelectedMotServices,
 } from "../wizardUtils";
+import { useMotServices } from "../useMotServices";
 
 type Step5ConfirmSummaryProps = {
   data: MotWizardData;
@@ -60,6 +61,7 @@ export function Step5ConfirmSummary({
   onConfirm,
   confirming,
 }: Step5ConfirmSummaryProps) {
+  useMotServices();
   const total = calculateTotalCost(data, inspectionPrice);
   const customerLines = formatCustomerAddress(data);
 

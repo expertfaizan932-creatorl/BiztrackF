@@ -27,6 +27,7 @@ import {
   getDeliveryOptionLabel,
   getMotServiceById,
 } from "@/src/components/mot-bookings/wizard/wizardUtils";
+import { useMotServices } from "@/src/components/mot-bookings/wizard/useMotServices";
 import type { MotDeliveryOption } from "@/src/components/mot-bookings/wizard/wizardTypes";
 import { formatBookingDateTime } from "./motBookingUtils";
 import { MotExpiryCountdown } from "./MotExpiryCountdown";
@@ -60,6 +61,7 @@ export function MotBookingViewDialog({
   onEdit,
 }: MotBookingViewDialogProps) {
   const { currentTenant } = useAuth();
+  useMotServices();
   const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
   const confirmationPath =
     booking && currentTenant?.domain

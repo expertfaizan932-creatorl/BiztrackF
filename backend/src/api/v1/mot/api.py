@@ -23,6 +23,13 @@ from .bookings.notifications import (
 )
 from .settings.schemas import MotSettingsResponse, MotSettingsUpdate
 from .settings import logic as settings_logic
+from .services.schemas import (
+    MotServiceCreate,
+    MotServiceUpdate,
+    MotServiceResponse,
+    MotServiceListResponse,
+)
+from .services import logic as services_logic
 from .tenant_context import resolve_mot_tenant_by_domain
 
 public_router = APIRouter(prefix="/public/mot", tags=["public-mot"])
@@ -154,6 +161,69 @@ async def update_mot_settings_admin(
 ):
     tenant_context, tenant = admin_context
     return settings_logic.update_mot_settings(db, tenant_context["tenant_id"], tenant, body)
+
+
+@admin_router.get("/services", response_model=MotServiceListResponse)
+async def list_mot_services(
+    include_inactive: bool = Query(False, description="Include inactive services"),
+    active_only: bool = Query(False, description="Return only active services"),
+    db: Session = Depends(get_db),
+    admin_context=Depends(_admin_tenant_context),
+    _=Depends(require_mot_admin),
+):
+    tenant_context, _ = admin_context
+    tenant_id = tenant_context["tenant_id"]
+    services_logic.ensure_default_mot_services(db, tenant_id)
+    items = services_logic.get_mot_services(
+        db, tenant_id, active_only=active_only, include_inactive=include_inactive
+    )
+    return MotServiceListResponse(items=items, total=len(items))
+
+
+@public_router.get("/{tenant_domain}/services", response_model=MotServiceListResponse)
+async def list_public_mot_services(
+    tenant_domain: str,
+    db: Session = Depends(get_db),
+):
+    tenant, _ = resolve_mot_tenant_by_domain(tenant_domain, db, require_enabled=True)
+    tenant_id = str(tenant.id)
+    services_logic.ensure_default_mot_services(db, tenant_id)
+    items = services_logic.get_mot_services(db, tenant_id, active_only=True)
+    return MotServiceListResponse(items=items, total=len(items))
+
+
+@admin_router.post("/services", response_model=MotServiceResponse, status_code=status.HTTP_201_CREATED)
+async def create_mot_service(
+    body: MotServiceCreate,
+    db: Session = Depends(get_db),
+    admin_context=Depends(_admin_tenant_context),
+    _=Depends(require_mot_admin),
+):
+    tenant_context, _ = admin_context
+    return services_logic.create_mot_service(db, tenant_context["tenant_id"], body)
+
+
+@admin_router.patch("/services/{service_id}", response_model=MotServiceResponse)
+async def update_mot_service(
+    service_id: str,
+    body: MotServiceUpdate,
+    db: Session = Depends(get_db),
+    admin_context=Depends(_admin_tenant_context),
+    _=Depends(require_mot_admin),
+):
+    tenant_context, _ = admin_context
+    return services_logic.update_mot_service(db, tenant_context["tenant_id"], service_id, body)
+
+
+@admin_router.delete("/services/{service_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_mot_service(
+    service_id: str,
+    db: Session = Depends(get_db),
+    admin_context=Depends(_admin_tenant_context),
+    _=Depends(require_mot_admin),
+):
+    tenant_context, _ = admin_context
+    services_logic.delete_mot_service(db, tenant_context["tenant_id"], service_id)
 
 
 @admin_router.get("/bookings/stats", response_model=MotBookingStats)

@@ -26,7 +26,7 @@ export const MOT_INSPECTION_SERVICE: MotServiceOption = {
   price: 49,
 };
 
-export const MOT_SERVICE_OPTIONS: MotServiceOption[] = [
+export const DEFAULT_MOT_SERVICE_OPTIONS: MotServiceOption[] = [
   {
     id: "oil-filter-change",
     label: "Oil & Filter Change",
@@ -70,6 +70,8 @@ export const MOT_SERVICE_OPTIONS: MotServiceOption[] = [
     price: 65,
   },
 ];
+
+export const MOT_SERVICE_OPTIONS = DEFAULT_MOT_SERVICE_OPTIONS;
 
 export type MotWizardServices = {
   motInspection: boolean;

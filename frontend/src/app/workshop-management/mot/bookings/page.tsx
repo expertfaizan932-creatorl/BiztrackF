@@ -10,6 +10,7 @@ import { apiService } from "@/src/services/ApiService";
 import { MotBookingsLoadingState } from "@/src/components/mot-bookings/MotBookingsLoadingState";
 import { MotBookingsPageHeader } from "@/src/components/mot-bookings/MotBookingsPageHeader";
 import { MotSettingsCard } from "@/src/components/mot-bookings/MotSettingsCard";
+import { MotServicesManagerCard } from "@/src/components/mot-bookings/MotServicesManagerCard";
 import { MotBookingsStatsCard } from "@/src/components/mot-bookings/MotBookingsStatsCard";
 import { MotBookingsFiltersCard } from "@/src/components/mot-bookings/MotBookingsFiltersCard";
 import { MotBookingsListCard } from "@/src/components/mot-bookings/MotBookingsListCard";
@@ -51,6 +52,8 @@ function MotManageBookingsContent() {
         <MotBookingsPageHeader onAddBooking={page.openNewBookingDialog} />
 
         <MotSettingsCard />
+
+        <MotServicesManagerCard />
 
         <MotBookingsStatsCard stats={page.stats} />
 

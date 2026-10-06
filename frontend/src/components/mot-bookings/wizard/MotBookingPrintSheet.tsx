@@ -7,6 +7,7 @@ import {
   getMotServiceById,
 } from "./wizardUtils";
 import { MOT_INSPECTION_PRICE } from "./wizardTypes";
+import { useMotServices } from "./useMotServices";
 
 const MOT_LOGO_SRC = "/mot/saks-auto-world-logo.jpeg";
 
@@ -15,6 +16,7 @@ type MotBookingPrintSheetProps = {
 };
 
 export function MotBookingPrintSheet({ booking }: MotBookingPrintSheetProps) {
+  useMotServices();
   const meta = (booking.booking_meta || {}) as Record<string, unknown>;
   const customer = (meta.customer || {}) as Record<string, string>;
   const servicesMeta = (meta.services || {}) as Record<string, unknown>;

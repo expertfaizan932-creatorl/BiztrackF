@@ -2,13 +2,22 @@ import {
   MOT_DELIVERY_OPTIONS,
   MOT_INSPECTION_PRICE,
   MOT_INSPECTION_SERVICE,
-  MOT_SERVICE_OPTIONS,
   type MotDeliveryOption,
   type MotServiceOption,
   type MotWizardData,
   type MotWizardServices,
   type MotWizardVehicle,
 } from "./wizardTypes";
+
+let dynamicServices: MotServiceOption[] = [];
+
+export function setMotServiceOptions(services: MotServiceOption[]) {
+  dynamicServices = services.filter((s) => s.id !== "mot-inspection");
+}
+
+export function getAllMotServiceOptions(): MotServiceOption[] {
+  return dynamicServices;
+}
 
 export function getMotServiceById(
   id: string,
@@ -17,7 +26,7 @@ export function getMotServiceById(
   if (id === "mot-inspection") {
     return { ...MOT_INSPECTION_SERVICE, price: inspectionPrice };
   }
-  return MOT_SERVICE_OPTIONS.find((item) => item.id === id);
+  return dynamicServices.find((item) => item.id === id);
 }
 
 export function getSelectedMotServices(
