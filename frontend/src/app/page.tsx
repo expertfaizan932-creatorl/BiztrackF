@@ -96,6 +96,7 @@ import {
   ArrowRight,
   Loader2,
   CheckCircle,
+  PlayCircle,
 } from "lucide-react";
 
 interface Plan {
@@ -453,6 +454,15 @@ export default function LandingPage() {
                 }
               >
                 See How It Works
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-base sm:text-lg px-8 py-6 h-auto border-emerald-200 text-emerald-800 hover:bg-emerald-50"
+                onClick={() => router.push("/tutorial")}
+              >
+                <PlayCircle className="mr-2 h-5 w-5" />
+                Tutorial
               </Button>
             </div>
 

@@ -31,6 +31,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       "/login",
       "/signup",
       "/client-portal",
+      "/tutorial",
       "/api",
       "/_next",
       "/favicon.ico",

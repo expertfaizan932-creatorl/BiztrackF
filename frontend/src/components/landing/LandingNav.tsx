@@ -24,6 +24,7 @@ const NAV_LINKS = [
 
 const PAGE_LINKS = [
   { href: "/about", label: "About Us" },
+  { href: "/tutorial", label: "Tutorial" },
   { href: "/contact", label: "Contact" },
 ] as const;
 

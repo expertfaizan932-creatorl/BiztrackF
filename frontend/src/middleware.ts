@@ -6,6 +6,7 @@ const publicRoutes = [
   "/login",
   "/signup",
   "/client-portal",
+  "/tutorial",
   "/api",
   "/_next",
   "/favicon.ico",

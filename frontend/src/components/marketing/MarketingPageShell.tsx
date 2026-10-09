@@ -5,6 +5,7 @@ import { LandingFooter } from "@/src/components/landing/LandingFooter";
 const MARKETING_NAV = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About Us" },
+  { href: "/tutorial", label: "Tutorial" },
   { href: "/contact", label: "Contact" },
 ] as const;
 

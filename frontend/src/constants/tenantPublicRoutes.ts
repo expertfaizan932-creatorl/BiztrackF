@@ -28,6 +28,7 @@ export const RESERVED_ROOT_SEGMENTS = new Set([
   "tasks",
   "team",
   "time-tracking",
+  "tutorial",
   "users",
   "workshop-management",
   "workspace",
